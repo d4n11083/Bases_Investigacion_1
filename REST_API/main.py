@@ -1,6 +1,6 @@
 from __future__ import print_function 
-from flask import Flask
-from flask_restful import Api, Resource, reqparse
+from flask import Flask, jsonify
+from flask_restful import Api, Resource, reqparse, abort
 import json
 import collections
 import cx_Oracle
@@ -10,42 +10,72 @@ api = Api(app)              #Nos indica que vamos a encerrar nuestra app como un
 
 
 
-
+#Clase para las Consultas a la base de datos 
 class DataBase():
     connection = cx_Oracle.connect("d4n11083/root@localhost/xe")
     cursor = connection.cursor()
 
-    def getAll(self):
-        sql = "SELECT * FROM USUARIO"
-        self.cursor.execute(sql)
-        rows = self.cursor.fetchall()
+    #Retorna toda la info de la tabla
+    def getUsers(self):
+        sql = "SELECT * FROM USUARIO"              #Query 
+        self.cursor.execute(sql)                   #Ejecuta el SQL 
+        rows = self.cursor.fetchall()              #Carga la variable con todas las filas de la respuesta 
 
-        objects_list = []
+        objects_list = []                          #Lista para convertir todas las filas en json 
         for row in rows:
             d = collections.OrderedDict()
             d["id"] = row[0]
             d["name"] = row[1]
             d["location"] = row[2]
             objects_list.append(d)
-        j = json.dumps(objects_list)
-
+        j = json.dumps(objects_list)               #Convierte a Json
         return j
     
-    def 
+    #Retorna la iformacion de un usuario dependiendo de su id 
+    def getUser(self, pUserId):
+        sql = "SELECT * FROM USUARIO WHERE IDUSUARIO =" + pUserId
+        self.cursor.execute(sql)
+        row = self.cursor.fetchall()
+        if( len(row) > 0):                         #Si todo salio bien envia el json
+            d = collections.OrderedDict()
+            d["id"] = row[0][0]
+            d["name"] = row[0][1]
+            d["location"] = row[0][2]
+            j = json.dumps(d)
+            return j
+        else:   
+            return 404                              #Si no retorna 404 User Not Found 
+    
+   # def insertUser(self, ):
 
+    
+#Objeto Base de datos
 db = DataBase()
 
+#Funcion oara crear errores
+def json_abort(pStatusCode, data=None):
+    response = jsonify(data or {'error': 'There was an error'})
+    response.status_code = pStatusCode
+    abort(response)
 
-class HelloWorld(Resource):  #Maneja los request
-    def get(self):
-        return {"Usuarios": json.loads(db.getAll()) }
-    
-    def post(self):
-        return {"data":"posted"}
+#Get incial para ver si el server funciona correctamente
+@app.route('/ping', methods=['GET'])
+def ping():
+    return {"message": "pong"}
 
-api.add_resource(HelloWorld, "/helloworld")  #root del resource cuando enviamos un request
+#GET para obetner todos los usuarios de la tabla Usuario 
+@app.route('/users', methods=['GET'])
+def getUsers():
+    return {"Users": json.loads(db.getUsers())}
 
-
+#GET que retorna el usuario bucandolo por medio de id 
+@app.route('/users/<string:pUserId>', methods=['GET'])
+def getUser(pUserId):
+    user = db.getUser(pUserId)
+    if(user!=404):
+        return {"User": json.loads(user)}
+    else:
+        return json_abort(404, {'error': 'User not found'})     #Retorna un json con el codigo de error y un mensaje de error al cliente 
 
 
 
