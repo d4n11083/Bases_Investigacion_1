@@ -1,5 +1,5 @@
 from __future__ import print_function 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_restful import Api, Resource, reqparse, abort
 import json
 import collections
@@ -46,6 +46,16 @@ class DataBase():
         else:   
             return 404                              #Si no retorna 404 User Not Found 
     
+    def addUser(self, pUserJson):   
+        IDUSUARIO = pUserJson['id']
+        NOMBREUSUARIO = pUserJson['name']
+        DIRECCIONUSUARIO = pUserJson['address']
+        sql = "INSERT INTO USUARIO VALUES (" + str(IDUSUARIO)+",'"+NOMBREUSUARIO+"','"+DIRECCIONUSUARIO+"'" ")"
+        self.cursor.execute(sql)
+        self.connection.commit()
+        return 200
+        
+    
    # def insertUser(self, ):
 
     
@@ -77,7 +87,11 @@ def getUser(pUserId):
     else:
         return json_abort(404, {'error': 'User not found'})     #Retorna un json con el codigo de error y un mensaje de error al cliente 
 
-
+@app.route('/users', methods=['POST'])
+def addUser():
+    print(request.json)
+    if(db.addUser(request.json) == 200):
+        return jsonify( {"message": "User Added Succesfully"} )
 
 if __name__ == "__main__":   #Inicializa el server en modo debug 
     app.run(debug=True)     
