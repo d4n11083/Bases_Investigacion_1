@@ -46,6 +46,7 @@ class DataBase():
         else:   
             return 404                              #Si no retorna 404 User Not Found 
     
+    #Aniade un nuevo usuario en la base de datos 
     def addUser(self, pUserJson):   
         IDUSUARIO = pUserJson['id']
         NOMBREUSUARIO = pUserJson['name']
@@ -53,11 +54,19 @@ class DataBase():
         sql = "INSERT INTO USUARIO VALUES (" + str(IDUSUARIO)+",'"+NOMBREUSUARIO+"','"+DIRECCIONUSUARIO+"'" ")"
         self.cursor.execute(sql)
         self.connection.commit()
-        return 200
-        
+        return 201
     
-   # def insertUser(self, ):
-
+    #Actualiza los campos de un usuario ya existente
+    def editUser(self,pUserId, pUserEditJson ):
+        if( getUser(pUserId) != 404 ):
+            NEW_NOMBREUSUARIO = pUserEditJson['name']
+            NEW_DIRECCIONUSUARIO = pUserEditJson['address']
+            sql = "UPDATE USUARIO SET NOMBREUSUARIO ='"+NEW_NOMBREUSUARIO+"',DIRECCIONUSUARIO = '"+NEW_DIRECCIONUSUARIO+"' WHERE IDUSUARIO ="+pUserId
+            self.cursor.execute(sql)
+            self.connection.commit()
+        else:
+            return 404
+        
     
 #Objeto Base de datos
 db = DataBase()
@@ -90,8 +99,17 @@ def getUser(pUserId):
 @app.route('/users', methods=['POST'])
 def addUser():
     print(request.json)
-    if(db.addUser(request.json) == 200):
-        return jsonify( {"message": "User Added Succesfully"} )
+    if(db.addUser(request.json) == 201):
+        return jsonify( {"message": "User Added Succesfully", "status_code":201} )
+
+#GET que retorna el usuario bucandolo por medio de id 
+@app.route('/users/<string:pUserId>', methods=['PUT'])
+def editUser(pUserId):
+    user = db.editUser(pUserId, request.json)
+    if(user!=404):
+        return {"User": json.loads(db.getUser(pUserId))}
+    else:
+        return json_abort(404, {'error': 'User not found cannot change it'})     #Retorna un json con el codigo de error y un mensaje de error al cliente 
 
 if __name__ == "__main__":   #Inicializa el server en modo debug 
     app.run(debug=True)     
