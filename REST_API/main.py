@@ -58,7 +58,7 @@ class DataBase():
     
     #Actualiza los campos de un usuario ya existente
     def editUser(self,pUserId, pUserEditJson ):
-        if( getUser(pUserId) != 404 ):
+        if( self.getUser(pUserId) != 404 ):
             NEW_NOMBREUSUARIO = pUserEditJson['name']
             NEW_DIRECCIONUSUARIO = pUserEditJson['address']
             sql = "UPDATE USUARIO SET NOMBREUSUARIO ='"+NEW_NOMBREUSUARIO+"',DIRECCIONUSUARIO = '"+NEW_DIRECCIONUSUARIO+"' WHERE IDUSUARIO ="+pUserId
@@ -66,6 +66,16 @@ class DataBase():
             self.connection.commit()
         else:
             return 404
+
+    def deleteUser(self, pUserId):
+        user = self.getUser(pUserId)
+        if( user != 404 ):
+            sql = "DELETE FROM USUARIO WHERE IDUSUARIO ="+pUserId
+            self.cursor.execute(sql)
+            self.connection.commit()
+            return user
+        else:
+            return 404       
         
     
 #Objeto Base de datos
@@ -102,14 +112,25 @@ def addUser():
     if(db.addUser(request.json) == 201):
         return jsonify( {"message": "User Added Succesfully", "status_code":201} )
 
-#GET que retorna el usuario bucandolo por medio de id 
+#PUT edita un usuario buscandolo por id 
 @app.route('/users/<string:pUserId>', methods=['PUT'])
 def editUser(pUserId):
     user = db.editUser(pUserId, request.json)
     if(user!=404):
-        return {"User": json.loads(db.getUser(pUserId))}
+        return {"User Updated": json.loads(db.getUser(pUserId))}
     else:
         return json_abort(404, {'error': 'User not found cannot change it'})     #Retorna un json con el codigo de error y un mensaje de error al cliente 
+
+#DELETE borra un usuario buscandolo por id
+@app.route('/users/<string:pUserId>', methods=['DELETE'])
+def deleteUser(pUserId):
+    user = db.deleteUser(pUserId)
+    if(user!=404):
+        return {"UserDeleted": json.loads(user)}
+    else:
+        return json_abort(404, {'error': 'User not found cannot delete it'})     #Retorna un json con el codigo de error y un mensaje de error al cliente 
+
+
 
 if __name__ == "__main__":   #Inicializa el server en modo debug 
     app.run(debug=True)     
