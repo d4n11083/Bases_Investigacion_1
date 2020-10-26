@@ -1,12 +1,13 @@
 from __future__ import print_function 
 from flask import Flask, jsonify, request
-from flask_restful import Api, Resource, reqparse, abort
+from flask_restful import abort
+from flask_cors import CORS
 import json
 import collections
 import cx_Oracle
 
 app = Flask(__name__)
-api = Api(app)              #Nos indica que vamos a encerrar nuestra app como un REST API
+CORS(app)              #Nos indica que CORS va a estar disponible para todas las rutas
 
 
 
@@ -86,6 +87,12 @@ def json_abort(pStatusCode, data=None):
     response = jsonify(data or {'error': 'There was an error'})
     response.status_code = pStatusCode
     abort(response)
+
+#Pequeno main
+@app.route('/', methods=['GET'])
+def hello():
+    return {"message": "Connected to RestApi"}
+
 
 #Get incial para ver si el server funciona correctamente
 @app.route('/ping', methods=['GET'])
