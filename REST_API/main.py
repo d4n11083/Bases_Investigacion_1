@@ -140,6 +140,7 @@ def getUser(pUserId):
     else:
         return json_abort(user, {'ERROR': 'User not found or Server Error'})     #Retorna un json con el codigo de error y un mensaje de error al cliente 
 
+#Post que hace insert de un nuevo usuario en la entidad Usuarios
 @app.route('/users', methods=['POST'])
 def addUser():
     addUserAnswer = db.addUser(request.json)
